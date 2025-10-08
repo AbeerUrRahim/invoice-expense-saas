@@ -37,7 +37,7 @@ Your project has been configured with:
 
 3. **Configure the API service**:
    - Railway will detect the `railway.json` in the root
-   - The API will be built using the Dockerfile in `api/InvoiceApp.API/`
+   - The API will be built using `Dockerfile.api` in the root directory
 
 4. **Add a Database**:
    - In your project dashboard, click "New"
@@ -74,7 +74,7 @@ Your project has been configured with:
 
 2. **Configure the UI service**:
    - Railway will use the `railway.json` in the `ui/` directory
-   - The UI will be built using the Dockerfile in `ui/ui-main/`
+   - The UI will be built using `Dockerfile.ui` in the root directory
 
 3. **Set Environment Variables** for the UI:
    ```

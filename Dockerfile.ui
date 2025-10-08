@@ -1,0 +1,27 @@
+# Build stage
+FROM node:20-alpine AS build
+WORKDIR /app
+
+# Copy package files
+COPY ui/ui-main/package.json ui/ui-main/package-lock.json* ui/ui-main/bun.lockb* ./
+RUN npm ci || npm install
+
+# Copy source code
+COPY ui/ui-main/ ./
+
+# Build the application
+RUN npm run build
+
+# Serve with Vite preview
+FROM node:20-alpine AS runtime
+WORKDIR /app
+
+# Set environment variables
+ENV PORT=8080
+EXPOSE 8080
+
+# Copy built application
+COPY --from=build /app .
+
+# Use Vite preview to serve the built app
+CMD ["sh", "-c", "npm run preview -- --host 0.0.0.0 --port ${PORT:-8080}"]

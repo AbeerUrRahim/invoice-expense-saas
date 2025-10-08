@@ -2,28 +2,32 @@
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
 
-# copy solution and restore
+# Copy the project file
 COPY api/InvoiceApp.API/InvoiceApp.API.csproj ./api/InvoiceApp.API/
-RUN dotnet restore "api/InvoiceApp.API/InvoiceApp.API.csproj"
+WORKDIR /src/api/InvoiceApp.API
 
-# copy rest of the source
-COPY api/InvoiceApp.API/ ./api/InvoiceApp.API/
-RUN dotnet publish "api/InvoiceApp.API/InvoiceApp.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
+# Restore dependencies
+RUN dotnet restore
+
+# Copy the rest of the source code
+COPY api/InvoiceApp.API/ ./
+
+# Build and publish
+RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS final
 WORKDIR /app
+
+# Set environment variables for Railway
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080
-# Railway provides PORT; map it to ASP.NET if present
 ENV PORT=8080
 EXPOSE 8080
 
+# Copy the published app
 COPY --from=build /app/publish .
 
-# pass through envs commonly used on Railway (optional)
+# Set environment variables
 ENV DOTNET_RUNNING_IN_CONTAINER=true
 
 ENTRYPOINT ["dotnet", "InvoiceApp.API.dll"]
-
-
-
