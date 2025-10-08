@@ -12,8 +12,30 @@ var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("dbcs");
 
+// Handle Railway PostgreSQL connection string
+if (builder.Environment.IsProduction())
+{
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    if (!string.IsNullOrEmpty(databaseUrl))
+    {
+        // Parse DATABASE_URL format: postgresql://user:password@host:port/database
+        var uri = new Uri(databaseUrl);
+        var connectionStringBuilder = new Npgsql.NpgsqlConnectionStringBuilder
+        {
+            Host = uri.Host,
+            Port = uri.Port,
+            Database = uri.AbsolutePath.TrimStart('/'),
+            Username = uri.UserInfo.Split(':')[0],
+            Password = uri.UserInfo.Split(':')[1],
+            SslMode = Npgsql.SslMode.Require,
+            TrustServerCertificate = true
+        };
+        connectionString = connectionStringBuilder.ToString();
+    }
+}
+
 if (!string.IsNullOrEmpty(connectionString) && 
-    (connectionString.Contains("Host=") || connectionString.Contains("railway")))
+    (connectionString.Contains("Host=") || connectionString.Contains("railway") || connectionString.Contains("postgres")))
 {
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connectionString));

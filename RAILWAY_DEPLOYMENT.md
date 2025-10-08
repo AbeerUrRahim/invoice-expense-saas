@@ -52,7 +52,7 @@ Your project has been configured with:
    JWT_KEY=YourStrongJwtSecretKey1234567890!
    JWT_TOKEN_VALIDITY_MIN=60
    ALLOWED_ORIGINS=https://your-ui-app.railway.app
-   DATABASE_URL=your-postgresql-connection-string
+   DATABASE_URL=postgresql://user:password@host:port/database
    ```
 
 6. **Update Connection String**:
@@ -137,7 +137,7 @@ Make sure to set these environment variables in Railway:
 - `JWT_AUDIENCE=https://your-api-app.railway.app/`
 - `JWT_KEY=YourStrongJwtSecretKey1234567890!`
 - `ALLOWED_ORIGINS=https://your-ui-app.railway.app`
-- `DATABASE_URL=your-postgresql-connection-string`
+- `DATABASE_URL=postgresql://user:password@host:port/database` (Railway will provide this automatically)
 
 **UI Service:**
 - `VITE_API_URL=https://your-api-app.railway.app`
