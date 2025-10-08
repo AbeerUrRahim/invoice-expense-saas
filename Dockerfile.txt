@@ -1,0 +1,21 @@
+# Use .NET 6 SDK to build the project
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+WORKDIR /src
+
+# Copy everything and restore dependencies
+COPY . .
+RUN dotnet restore "InvoiceApp.API.csproj"
+
+# Build and publish
+RUN dotnet publish "InvoiceApp.API.csproj" -c Release -o /app/publish
+
+# Use .NET 6 runtime for the final image
+FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+
+# Expose port 80 inside container
+EXPOSE 80
+
+# Run the API
+ENTRYPOINT ["dotnet", "InvoiceApp.API.dll"]

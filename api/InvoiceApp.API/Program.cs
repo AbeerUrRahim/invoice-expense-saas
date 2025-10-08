@@ -8,8 +8,18 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-options.UseSqlServer(builder.Configuration.GetConnectionString("dbcs")));
+// Configure database based on environment
+var connectionString = builder.Configuration.GetConnectionString("dbcs");
+if (builder.Environment.IsProduction() && connectionString.Contains("postgres"))
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseNpgsql(connectionString));
+}
+else
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlServer(connectionString));
+}
 
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
@@ -78,12 +88,18 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 //Adding CORS//
+// Read allowed origins from env var ALLOWED_ORIGINS (comma-separated). Fallback to localhost.
+var allowedOriginsFromEnv = Environment.GetEnvironmentVariable("ALLOWED_ORIGINS");
+var allowedOrigins = (allowedOriginsFromEnv ?? "http://localhost:8081")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
-        builder => builder.WithOrigins("http://localhost:8081") 
-                          .AllowAnyHeader()   
-                          .AllowAnyMethod()); 
+        policyBuilder => policyBuilder
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod());
 });
 
 
@@ -92,6 +108,22 @@ builder.Services.AddCors(options =>
 //Calling register class
 ServiceRegister.Register(builder.Services);
 var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseAuthentication();
+app.UseRouting();
+app.UseCors("AllowReactApp");  // apply that policy
+app.UseHttpsRedirection();
+app.UseAuthorization();
+
+app.MapControllers();
+
 //ADDING ROLES TO SYSTEM
 using (var scope = app.Services.CreateScope())
 {
@@ -129,21 +161,6 @@ using (var scope = app.Services.CreateScope())
             await userManager.AddToRoleAsync(adminUser, "Admin");
         }
     }
-
-    // Configure the HTTP request pipeline.
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseSwagger();
-        app.UseSwaggerUI();
-    }
-
-    app.UseAuthentication();
-    app.UseRouting();
-    app.UseCors("AllowReactApp");  // apply that policy
-    app.UseHttpsRedirection();
-    app.UseAuthorization();
-
-    app.MapControllers();
-
-    app.Run();
 }
+
+app.Run();
