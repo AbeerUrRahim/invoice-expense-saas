@@ -5,12 +5,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure database based on environment
 var connectionString = builder.Configuration.GetConnectionString("dbcs");
-if (builder.Environment.IsProduction() && connectionString.Contains("postgres"))
+
+if (!string.IsNullOrEmpty(connectionString) && 
+    (connectionString.Contains("Host=") || connectionString.Contains("railway")))
 {
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connectionString));
@@ -20,7 +23,6 @@ else
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(connectionString));
 }
-
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
         .AddEntityFrameworkStores<AppDbContext>()
