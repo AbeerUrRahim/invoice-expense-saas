@@ -15,24 +15,18 @@ var connectionString = builder.Configuration.GetConnectionString("dbcs");
 // Handle Railway PostgreSQL connection string
 if (builder.Environment.IsProduction())
 {
-    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-    if (!string.IsNullOrEmpty(databaseUrl))
+    var host = Environment.GetEnvironmentVariable("PGHOST");
+    var database = Environment.GetEnvironmentVariable("PGDATABASE");
+    var username = Environment.GetEnvironmentVariable("PGUSER");
+    var password = Environment.GetEnvironmentVariable("PGPASSWORD");
+    var port = Environment.GetEnvironmentVariable("PGPORT");
+
+    if (!string.IsNullOrEmpty(host) && !string.IsNullOrEmpty(database))
     {
-        // Parse DATABASE_URL format: postgresql://user:password@host:port/database
-        var uri = new Uri(databaseUrl);
-        var connectionStringBuilder = new Npgsql.NpgsqlConnectionStringBuilder
-        {
-            Host = uri.Host,
-            Port = uri.Port,
-            Database = uri.AbsolutePath.TrimStart('/'),
-            Username = uri.UserInfo.Split(':')[0],
-            Password = uri.UserInfo.Split(':')[1],
-            SslMode = Npgsql.SslMode.Require,
-            TrustServerCertificate = true
-        };
-        connectionString = connectionStringBuilder.ToString();
+        connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};Ssl Mode=Require;Trust Server Certificate=True;";
     }
 }
+
 
 if (!string.IsNullOrEmpty(connectionString) && 
     (connectionString.Contains("Host=") || connectionString.Contains("railway") || connectionString.Contains("postgres")))
