@@ -12,18 +12,37 @@ var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("dbcs");
 
-// Handle Railway PostgreSQL connection string
 if (builder.Environment.IsProduction())
 {
-    var host = Environment.GetEnvironmentVariable("PGHOST");
-    var database = Environment.GetEnvironmentVariable("PGDATABASE");
-    var username = Environment.GetEnvironmentVariable("PGUSER");
-    var password = Environment.GetEnvironmentVariable("PGPASSWORD");
-    var port = Environment.GetEnvironmentVariable("PGPORT");
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
-    if (!string.IsNullOrEmpty(host) && !string.IsNullOrEmpty(database))
+    if (!string.IsNullOrEmpty(databaseUrl))
     {
-        connectionString = $"Host={host};Port={port};Database={database};Username={username};Password={password};Ssl Mode=Require;Trust Server Certificate=True;";
+        try
+        {
+            // Some Railway URLs start with "postgres://" instead of "postgresql://"
+            databaseUrl = databaseUrl.Replace("postgres://", "postgresql://");
+
+            var uri = new Uri(databaseUrl);
+            var userInfo = uri.UserInfo.Split(':');
+
+            var connectionStringBuilder = new Npgsql.NpgsqlConnectionStringBuilder
+            {
+                Host = uri.Host,
+                Port = uri.IsDefaultPort ? 5432 : uri.Port, // default fallback
+                Database = uri.AbsolutePath.TrimStart('/'),
+                Username = userInfo[0],
+                Password = userInfo.Length > 1 ? userInfo[1] : "",
+                SslMode = Npgsql.SslMode.Require,
+                TrustServerCertificate = true
+            };
+
+            connectionString = connectionStringBuilder.ToString();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error parsing DATABASE_URL: {ex.Message}");
+        }
     }
 }
 
