@@ -1,18 +1,17 @@
-# Use .NET 6 SDK image to build
+# Build stage
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
 
-# Copy csproj and restore dependencies
-COPY ./api/InvoiceApp.API/InvoiceApp.API.csproj ./InvoiceApp.API/
-RUN dotnet restore "InvoiceApp.API/InvoiceApp.API.csproj"
+# Copy everything (whole repo) into container
+COPY . .
 
-# Copy the rest of the source code
-COPY ./api/InvoiceApp.API/ ./InvoiceApp.API/
+# Restore dependencies
+RUN dotnet restore "api/InvoiceApp.API/InvoiceApp.API.csproj"
 
 # Build and publish the app
-RUN dotnet publish "InvoiceApp.API/InvoiceApp.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "api/InvoiceApp.API/InvoiceApp.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Use .NET 6 runtime image
+# Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
